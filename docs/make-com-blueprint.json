@@ -1,0 +1,561 @@
+{
+  "__version__": 1,
+  "name": "UIG Property Acquisition Pipeline — Full Automation",
+  "description": "Complete end-to-end automation for UIG's India property acquisition pipeline. Covers: new lead intake → outreach → follow-ups → document request → verification → deal approval → HubSpot sync.",
+  "modules": [
+
+    {
+      "id": 1,
+      "module": "webhook:CustomWebHook",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 0, "y": 0 }
+      },
+      "parameters": {
+        "hook": {
+          "name": "UIG New Lead Webhook",
+          "description": "Receives new lead events from the FastAPI backend (POST /api/webhooks/make)"
+        }
+      },
+      "label": "Trigger: New Lead Created"
+    },
+
+    {
+      "id": 2,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 200, "y": 0 }
+      },
+      "parameters": {
+        "type": "auto"
+      },
+      "mapper": {
+        "json": "{{1.body}}"
+      },
+      "label": "Parse Lead Payload"
+    },
+
+    {
+      "id": 3,
+      "module": "router:RouterModule",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 400, "y": 0 }
+      },
+      "label": "Route by Event Type",
+      "routes": [
+        {
+          "label": "new_lead",
+          "filter": {
+            "name": "Is New Lead",
+            "conditions": [[{ "a": "{{2.event}}", "b": "new_lead", "o": "text:equal" }]]
+          }
+        },
+        {
+          "label": "response_received",
+          "filter": {
+            "name": "Is Response",
+            "conditions": [[{ "a": "{{2.event}}", "b": "response_received", "o": "text:equal" }]]
+          }
+        },
+        {
+          "label": "docs_uploaded",
+          "filter": {
+            "name": "Docs Uploaded",
+            "conditions": [[{ "a": "{{2.event}}", "b": "docs_uploaded", "o": "text:equal" }]]
+          }
+        },
+        {
+          "label": "docs_verified",
+          "filter": {
+            "name": "Docs Verified",
+            "conditions": [[{ "a": "{{2.event}}", "b": "docs_verified", "o": "text:equal" }]]
+          }
+        },
+        {
+          "label": "lead_approved",
+          "filter": {
+            "name": "Lead Approved",
+            "conditions": [[{ "a": "{{2.event}}", "b": "lead_approved", "o": "text:equal" }]]
+          }
+        },
+        {
+          "label": "lead_rejected",
+          "filter": {
+            "name": "Lead Rejected",
+            "conditions": [[{ "a": "{{2.event}}", "b": "lead_rejected", "o": "text:equal" }]]
+          }
+        }
+      ]
+    },
+
+    {
+      "id": 10,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 700, "y": -200 },
+        "route_label": "new_lead"
+      },
+      "parameters": {
+        "handleErrors": false,
+        "useNewZLibDeCompress": true
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/outreach/send",
+        "method": "POST",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"lead_id\": {{2.lead_id}},\n  \"channel\": \"whatsapp\",\n  \"template\": \"initial_contact_whatsapp\"\n}"
+      },
+      "label": "Send WhatsApp Initial Contact"
+    },
+
+    {
+      "id": 11,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 700, "y": -100 },
+        "route_label": "new_lead"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/outreach/send",
+        "method": "POST",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"lead_id\": {{2.lead_id}},\n  \"channel\": \"email\",\n  \"template\": \"initial_contact_email\"\n}"
+      },
+      "label": "Send Email Initial Contact"
+    },
+
+    {
+      "id": 12,
+      "module": "hubspot:CreateOrUpdateContact",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 700, "y": 0 },
+        "route_label": "new_lead"
+      },
+      "mapper": {
+        "email": "{{2.email}}",
+        "properties": {
+          "firstname": "{{2.owner_name}}",
+          "phone": "{{2.phone}}",
+          "city": "{{2.city}}",
+          "hs_lead_status": "NEW",
+          "lifecyclestage": "lead",
+          "uig_pipeline_stage": "new_lead",
+          "uig_lead_id": "{{2.lead_id}}"
+        }
+      },
+      "label": "HubSpot: Create Contact"
+    },
+
+    {
+      "id": 13,
+      "module": "make:ScheduleScenario",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 900, "y": -200 },
+        "route_label": "new_lead"
+      },
+      "mapper": {
+        "scenario_id": "{{ENV.FOLLOWUP_SCENARIO_ID}}",
+        "delay_hours": 72,
+        "data": {
+          "lead_id": "{{2.lead_id}}",
+          "follow_up_number": 1
+        }
+      },
+      "label": "Schedule Follow-Up #1 (Day 3)"
+    },
+
+    {
+      "id": 14,
+      "module": "make:ScheduleScenario",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 900, "y": -100 },
+        "route_label": "new_lead"
+      },
+      "mapper": {
+        "scenario_id": "{{ENV.FOLLOWUP_SCENARIO_ID}}",
+        "delay_hours": 168,
+        "data": {
+          "lead_id": "{{2.lead_id}}",
+          "follow_up_number": 2
+        }
+      },
+      "label": "Schedule Follow-Up #2 (Day 7)"
+    },
+
+    {
+      "id": 20,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 700, "y": 200 },
+        "route_label": "response_received"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/leads/{{2.lead_id}}/stage",
+        "method": "PATCH",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"stage\": \"response_received\"\n}"
+      },
+      "label": "Advance Stage: response_received"
+    },
+
+    {
+      "id": 21,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 900, "y": 200 },
+        "route_label": "response_received"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/leads/{{2.lead_id}}/stage",
+        "method": "PATCH",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"stage\": \"qualified\"\n}"
+      },
+      "label": "Advance Stage: qualified (auto-qualify on response)"
+    },
+
+    {
+      "id": 22,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 1100, "y": 200 },
+        "route_label": "response_received"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/outreach/send",
+        "method": "POST",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"lead_id\": {{2.lead_id}},\n  \"channel\": \"whatsapp\",\n  \"template\": \"document_request\"\n}"
+      },
+      "label": "Send Document Request WhatsApp"
+    },
+
+    {
+      "id": 23,
+      "module": "hubspot:UpdateContact",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 1300, "y": 200 },
+        "route_label": "response_received"
+      },
+      "mapper": {
+        "id": "{{2.hubspot_contact_id}}",
+        "properties": {
+          "hs_lead_status": "IN_PROGRESS",
+          "uig_pipeline_stage": "qualified",
+          "uig_responded_at": "{{now}}"
+        }
+      },
+      "label": "HubSpot: Update to Qualified"
+    },
+
+    {
+      "id": 30,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 700, "y": 400 },
+        "route_label": "docs_uploaded"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/documents/{{2.lead_id}}/legal-check",
+        "method": "POST",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{}"
+      },
+      "label": "Trigger AI Document Verification"
+    },
+
+    {
+      "id": 31,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 900, "y": 400 },
+        "route_label": "docs_uploaded"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/leads/{{2.lead_id}}/stage",
+        "method": "PATCH",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"stage\": \"under_verification\"\n}"
+      },
+      "label": "Advance Stage: under_verification"
+    },
+
+    {
+      "id": 32,
+      "module": "email:ActionSendEmail",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 1100, "y": 400 },
+        "route_label": "docs_uploaded"
+      },
+      "mapper": {
+        "to": "philip.george@uigllc.org",
+        "subject": "[UIG Action Required] Documents received — Lead #{{2.lead_id}}",
+        "html": "<p>Documents have been uploaded for Lead <strong>#{{2.lead_id}}</strong> ({{2.owner_name}}).</p><p>AI verification has been triggered. Please review once complete.</p><p><a href='{{ENV.DASHBOARD_URL}}/leads/{{2.lead_id}}'>View in Dashboard →</a></p>"
+      },
+      "label": "Notify Philip George: Docs Received"
+    },
+
+    {
+      "id": 40,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 700, "y": 600 },
+        "route_label": "docs_verified"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/leads/{{2.lead_id}}/stage",
+        "method": "PATCH",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"stage\": \"approved\"\n}"
+      },
+      "label": "Advance Stage: approved"
+    },
+
+    {
+      "id": 41,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 900, "y": 600 },
+        "route_label": "docs_verified"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/outreach/send",
+        "method": "POST",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"lead_id\": {{2.lead_id}},\n  \"channel\": \"whatsapp\",\n  \"template\": \"site_visit_invitation\"\n}"
+      },
+      "label": "Send Site Visit Invitation WhatsApp"
+    },
+
+    {
+      "id": 42,
+      "module": "hubspot:CreateDeal",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 1100, "y": 600 },
+        "route_label": "docs_verified"
+      },
+      "mapper": {
+        "dealname": "UIG Acquisition — {{2.property_address}}",
+        "amount": "{{2.price}}",
+        "pipeline": "default",
+        "dealstage": "appointmentscheduled",
+        "associatedContacts": ["{{2.hubspot_contact_id}}"],
+        "properties": {
+          "uig_lead_id": "{{2.lead_id}}",
+          "uig_pipeline_stage": "approved",
+          "deal_currency_code": "INR"
+        }
+      },
+      "label": "HubSpot: Create Deal"
+    },
+
+    {
+      "id": 43,
+      "module": "email:ActionSendEmail",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 1300, "y": 600 },
+        "route_label": "docs_verified"
+      },
+      "mapper": {
+        "to": "philip.george@uigllc.org",
+        "subject": "✅ [UIG APPROVED] Lead #{{2.lead_id}} — Ready for Site Visit",
+        "html": "<h2>Lead Approved — Action Required</h2><p><strong>Owner:</strong> {{2.owner_name}}<br><strong>Property:</strong> {{2.property_address}}<br><strong>Asking Price:</strong> ₹{{2.price}}</p><p>All documents verified. Please schedule a site visit within 7 days.</p><p><a href='{{ENV.DASHBOARD_URL}}/leads/{{2.lead_id}}'>Open in Dashboard →</a></p>"
+      },
+      "label": "Notify Philip George: Lead Approved"
+    },
+
+    {
+      "id": 50,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 700, "y": 800 },
+        "route_label": "lead_approved"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/deals",
+        "method": "POST",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"lead_id\": {{2.lead_id}},\n  \"property_id\": {{2.property_id}},\n  \"deal_type\": \"{{2.transaction_type}}\",\n  \"agreed_price\": {{2.price}}\n}"
+      },
+      "label": "Create Deal Record in DB"
+    },
+
+    {
+      "id": 51,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 900, "y": 800 },
+        "route_label": "lead_approved"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/leads/{{2.lead_id}}/stage",
+        "method": "PATCH",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"stage\": \"visit_scheduled\"\n}"
+      },
+      "label": "Advance Stage: visit_scheduled"
+    },
+
+    {
+      "id": 60,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "metadata": {
+        "designer": { "x": 700, "y": 1000 },
+        "route_label": "lead_rejected"
+      },
+      "mapper": {
+        "url": "{{ENV.BACKEND_URL}}/api/outreach/send",
+        "method": "POST",
+        "headers": [
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-API-Key", "value": "{{ENV.UIG_INTERNAL_API_KEY}}" }
+        ],
+        "body": "{\n  \"lead_id\": {{2.lead_id}},\n  \"channel\": \"whatsapp\",\n  \"template\": \"polite_decline\"\n}"
+      },
+      "label": "Send Polite Decline WhatsApp"
+    },
+
+    {
+      "id": 61,
+      "module": "hubspot:UpdateContact",
+      "version": 1,
+      "metadata": {
+        "designer": { "x": 900, "y": 1000 },
+        "route_label": "lead_rejected"
+      },
+      "mapper": {
+        "id": "{{2.hubspot_contact_id}}",
+        "properties": {
+          "hs_lead_status": "UNQUALIFIED",
+          "uig_pipeline_stage": "closed_lost",
+          "uig_rejection_reason": "{{2.rejection_reason}}"
+        }
+      },
+      "label": "HubSpot: Mark as Closed Lost"
+    }
+
+  ],
+
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    },
+    "zone": "eu1.make.com"
+  },
+
+  "_notes": {
+    "environment_variables": {
+      "BACKEND_URL": "Your FastAPI backend URL, e.g. https://api.uigllc.org",
+      "UIG_INTERNAL_API_KEY": "Internal API key for Make.com → FastAPI calls",
+      "DASHBOARD_URL": "Frontend dashboard URL, e.g. https://app.uigllc.org",
+      "FOLLOWUP_SCENARIO_ID": "Make.com scenario ID for the follow-up scenario"
+    },
+    "setup_steps": [
+      "1. Import this JSON into Make.com via Scenarios → Import Blueprint",
+      "2. Set all environment variables in Make.com → Variables",
+      "3. Create a webhook in Make.com, copy URL into your .env as MAKE_WEBHOOK_URL",
+      "4. Add MAKE_WEBHOOK_URL to backend/.env — the FastAPI webhooks router posts events here",
+      "5. Enable the scenario and run a test lead through the pipeline",
+      "6. The follow-up scenario (module 13/14) is a separate scenario — see follow_up_blueprint below"
+    ],
+    "follow_up_scenario": {
+      "name": "UIG Follow-Up Scheduler",
+      "description": "Triggered with delay by the main scenario. Checks if lead responded; if not, sends follow-up message.",
+      "modules": [
+        "webhook:CustomWebHook — receives {lead_id, follow_up_number}",
+        "http:GET /api/leads/{lead_id} — check current stage",
+        "router — if stage still contact_initiated: send follow-up | else: stop",
+        "http:POST /api/outreach/send — template=follow_up_1 or follow_up_2",
+        "http:PATCH /api/leads/{lead_id}/stage — update last_contact_at"
+      ]
+    },
+    "lpi_automation_scenario": {
+      "name": "UIG LPI Certificate Issued",
+      "description": "Fires when an LPI certificate is issued via the LPI portal",
+      "modules": [
+        "webhook:CustomWebHook — receives {lpi_code, owner_name, property_address, city}",
+        "http:POST /api/leads — create lead from LPI applicant",
+        "hubspot:CreateContact",
+        "http:POST /api/outreach/send — template=lpi_acquisition_pitch"
+      ]
+    },
+    "agent_onboarding_scenario": {
+      "name": "UIG Agent Onboarding",
+      "description": "Triggered when an agent submits RERA number via agent portal",
+      "modules": [
+        "webhook:CustomWebHook — receives {agent_name, rera_number, city, phone, email}",
+        "http:POST /api/agents — create agent profile",
+        "http:POST /api/agents/{id}/pitch — send initial WhatsApp",
+        "hubspot:CreateContact — tag as AGENT lifecycle stage",
+        "email:SendEmail — welcome email with portal credentials"
+      ]
+    }
+  }
+}

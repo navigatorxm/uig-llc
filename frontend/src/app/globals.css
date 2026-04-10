@@ -1,3 +1,178 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --navy:   #060D1F;
+  --navy-2: #0C1A3A;
+  --navy-3: #122050;
+  --blue:   #1D4ED8;
+  --blue-l: #3B82F6;
+  --gold:   #F59E0B;
+  --gold-l: #FCD34D;
+  --white:  #FFFFFF;
+  --gray-1: #F8FAFC;
+  --gray-2: #E2E8F0;
+  --gray-3: #94A3B8;
+  --text:   #0F172A;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--white);
+  color: var(--text);
+  margin: 0;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.gradient-hero {
+  background: linear-gradient(135deg, #060D1F 0%, #0C1A3A 50%, #122050 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #3B82F6 0%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-gold {
+  background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%);
+}
+
+.card-glow {
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.15), 0 8px 32px rgba(29,78,216,0.12);
+  transition: box-shadow 0.25s;
+}
+.card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.4), 0 16px 48px rgba(29,78,216,0.22);
+}
+
+.lpi-badge {
+  background: linear-gradient(135deg, #F59E0B22, #F59E0B11);
+  border: 1px solid #F59E0B44;
+  color: #F59E0B;
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--blue-l);
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #1D4ED8, #2563EB);
+  color: white;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 12px 28px;
+  transition: opacity 0.2s, transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+
+.btn-gold {
+  background: linear-gradient(90deg, #F59E0B, #FBBF24);
+  color: #060D1F;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 12px 28px;
+  transition: opacity 0.2s, transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-gold:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-outline {
+  background: transparent;
+  color: white;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 11px 27px;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  transition: border-color 0.2s, background 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-outline:hover { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); }
+
+.stat-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 28px;
+  transition: background 0.2s;
+}
+.stat-card:hover { background: rgba(255,255,255,0.07); }
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1D4ED822, #1D4ED811);
+  border: 1px solid #1D4ED833;
+}
+
+.pricing-card {
+  border-radius: 20px;
+  padding: 36px;
+  border: 1px solid var(--gray-2);
+  background: white;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.pricing-card:hover { transform: translateY(-4px); box-shadow: 0 24px 64px rgba(29,78,216,0.12); }
+.pricing-card.featured {
+  background: linear-gradient(135deg, #060D1F, #0C1A3A);
+  border-color: #1D4ED8;
+  color: white;
+}
+
+.timeline-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1D4ED8, #3B82F6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.nav-link {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-link:hover { color: white; }

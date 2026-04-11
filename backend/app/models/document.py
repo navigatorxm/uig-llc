@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, Enum, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -55,7 +55,7 @@ class Document(Base):
     google_drive_url = Column(Text)
     original_filename = Column(String(500))
 
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    uploaded_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     verified = Column(Boolean, default=False)
     verified_at = Column(DateTime, nullable=True)
     verified_by = Column(String(255), nullable=True)
@@ -67,4 +67,4 @@ class Document(Base):
 
     lead = relationship("Lead", back_populates="documents")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

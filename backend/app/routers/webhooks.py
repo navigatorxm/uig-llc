@@ -2,7 +2,7 @@
 import logging
 from fastapi import APIRouter, Request, Response, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import get_db
 from app.models.lead import Lead, PipelineStage
 from app.models.outreach_log import OutreachLog, OutreachChannel
@@ -31,7 +31,7 @@ async def whatsapp_webhook(request: Request, db: Session = Depends(get_db)):
 
     if lead:
         lead.response_received = True
-        lead.last_contact_at = datetime.utcnow()
+        lead.last_contact_at = datetime.now(timezone.utc)
 
         # Basic intent detection
         body_lower = body.lower()
@@ -56,7 +56,7 @@ async def whatsapp_webhook(request: Request, db: Session = Depends(get_db)):
         )
         if last_log:
             last_log.response_text = body
-            last_log.response_at = datetime.utcnow()
+            last_log.response_at = datetime.now(timezone.utc)
 
         db.commit()
         logger.info(f"Lead {lead.id} updated from WhatsApp reply — stage: {lead.pipeline_stage}")

@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Enum, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -61,7 +61,7 @@ class Property(Base):
     owner_whatsapp = Column(String(20))
 
     listing_date = Column(DateTime, nullable=True)
-    scraped_at = Column(DateTime, default=datetime.utcnow)
+    scraped_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     is_duplicate = Column(Boolean, default=False)
 
     # Tags
@@ -71,4 +71,4 @@ class Property(Base):
     lead_id = Column(Integer, ForeignKey("leads.id"), nullable=True)
     lead = relationship("Lead", back_populates="properties")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

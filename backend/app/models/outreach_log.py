@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, Enum, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -19,7 +19,7 @@ class OutreachLog(Base):
     message_template = Column(String(100))
     message_body = Column(Text)
 
-    sent_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     delivered = Column(Boolean, nullable=True)
     delivery_sid = Column(String(255))  # Twilio SID or SendGrid message id
 

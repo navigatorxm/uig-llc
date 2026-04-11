@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import get_db
 from app.models.lead import Lead
 from app.models.document import Document, DocumentType, PURCHASE_REQUIRED_DOCS, RENTAL_REQUIRED_DOCS
@@ -111,7 +111,7 @@ def verify_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     doc.verified = verify_request.verified
-    doc.verified_at = datetime.utcnow()
+    doc.verified_at = datetime.now(timezone.utc)
     doc.verified_by = verify_request.verified_by
     doc.rejection_reason = verify_request.rejection_reason
     db.commit()

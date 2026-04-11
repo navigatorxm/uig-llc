@@ -1,5 +1,5 @@
 """SystemSetting model — encrypted key/value store for API keys and secrets."""
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text
 from app.database import Base
 
@@ -13,5 +13,5 @@ class SystemSetting(Base):
     category = Column(String(100), nullable=False, default="general")
     is_secret = Column(Boolean, default=False)
     description = Column(Text, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     updated_by = Column(String(255), nullable=True)

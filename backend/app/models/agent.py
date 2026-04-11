@@ -1,6 +1,6 @@
 """SQLAlchemy model for real estate agent partners."""
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Enum, Text, JSON
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -66,5 +66,5 @@ class Agent(Base):
     hubspot_contact_id = Column(String(100), nullable=True)
     notes = Column(Text)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

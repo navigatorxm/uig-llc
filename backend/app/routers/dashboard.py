@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.database import get_db
 from app.models.lead import Lead, PipelineStage
 from app.models.property import Property
@@ -15,7 +15,7 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 @router.get("/analytics/overview")
 def get_overview(db: Session = Depends(get_db)):
     """Key performance indicators for the acquisition pipeline."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0)
     week_ago = now - timedelta(days=7)
 

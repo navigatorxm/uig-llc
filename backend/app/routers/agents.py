@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import get_db
 from app.models.agent import Agent, AgentStatus, AgentTier
 from app.services.agents.agent_outreach import (
@@ -88,8 +88,8 @@ def send_partnership_pitch(agent_id: int, db: Session = Depends(get_db)):
     result = svc.send_initial_pitch(agent_profile)
 
     agent_rec.status = AgentStatus.pitched
-    agent_rec.first_contact_at = agent_rec.first_contact_at or datetime.utcnow()
-    agent_rec.last_contact_at = datetime.utcnow()
+    agent_rec.first_contact_at = agent_rec.first_contact_at or datetime.now(timezone.utc)
+    agent_rec.last_contact_at = datetime.now(timezone.utc)
     agent_rec.contact_attempts += 1
     db.commit()
 
@@ -104,7 +104,7 @@ def onboard_agent(agent_id: int, db: Session = Depends(get_db)):
     if not agent_rec:
         raise HTTPException(status_code=404, detail="Agent not found")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     agent_rec.status = AgentStatus.onboarded
     agent_rec.lpi_license_active = True
     agent_rec.lpi_license_issued_at = now

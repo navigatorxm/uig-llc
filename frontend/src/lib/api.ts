@@ -250,62 +250,62 @@ export const outreachApi = {
 // --- Admin API functions ---
 export const adminAuthApi = {
   login: (email: string, password: string) =>
-    api.post<AdminLoginResponse>("/api/admin/auth/login", { email, password }),
-  me: () => api.get<AdminUser>("/api/admin/auth/me"),
+    api.post<AdminLoginResponse>("/admin/auth/login", { email, password }),
+  me: () => api.get<AdminUser>("/admin/auth/me"),
   changePassword: (current_password: string, new_password: string) =>
-    api.post("/api/admin/auth/change-password", { current_password, new_password }),
-  listUsers: () => api.get<AdminUser[]>("/api/admin/auth/users"),
+    api.post("/admin/auth/change-password", { current_password, new_password }),
+  listUsers: () => api.get<AdminUser[]>("/admin/auth/users"),
   createUser: (data: { email: string; full_name: string; phone?: string; role?: UserRole; password: string }) =>
-    api.post<AdminUser>("/api/admin/auth/users", data),
-  deactivateUser: (id: number) => api.patch(`/api/admin/auth/users/${id}/deactivate`),
-  activateUser: (id: number) => api.patch(`/api/admin/auth/users/${id}/activate`),
+    api.post<AdminUser>("/admin/auth/users", data),
+  deactivateUser: (id: number) => api.patch(`/admin/auth/users/${id}/deactivate`),
+  activateUser: (id: number) => api.patch(`/admin/auth/users/${id}/activate`),
 };
 
 export const adminPipelineApi = {
-  overview: () => api.get<PipelineOverview>("/api/admin/pipeline/overview"),
-  leadVelocity: (days?: number) => api.get("/api/admin/pipeline/lead-velocity", { params: { days } }),
-  conversionFunnel: () => api.get("/api/admin/pipeline/conversion-funnel"),
-  topLeads: (limit?: number) => api.get("/api/admin/pipeline/top-leads", { params: { limit } }),
+  overview: () => api.get<PipelineOverview>("/admin/pipeline/overview"),
+  leadVelocity: (days?: number) => api.get("/admin/pipeline/lead-velocity", { params: { days } }),
+  conversionFunnel: () => api.get("/admin/pipeline/conversion-funnel"),
+  topLeads: (limit?: number) => api.get("/admin/pipeline/top-leads", { params: { limit } }),
 };
 
 export const adminCostsApi = {
-  overview: (days?: number) => api.get<CostOverview>("/api/admin/costs/overview", { params: { days } }),
+  overview: (days?: number) => api.get<CostOverview>("/admin/costs/overview", { params: { days } }),
   walletTopup: (amount: number, currency?: string) =>
-    api.post("/api/admin/costs/wallet/topup", { amount, currency }),
-  transactions: (params?: object) => api.get("/api/admin/costs/transactions", { params }),
-  recordAiUsage: (data: object) => api.post("/api/admin/costs/ai-usage", data),
-  listAiUsage: (params?: object) => api.get("/api/admin/costs/ai-usage", { params }),
-  dailyBreakdown: (days?: number) => api.get("/api/admin/costs/daily-breakdown", { params: { days } }),
+    api.post("/admin/costs/wallet/topup", { amount, currency }),
+  transactions: (params?: object) => api.get("/admin/costs/transactions", { params }),
+  recordAiUsage: (data: object) => api.post("/admin/costs/ai-usage", data),
+  listAiUsage: (params?: object) => api.get("/admin/costs/ai-usage", { params }),
+  dailyBreakdown: (days?: number) => api.get("/admin/costs/daily-breakdown", { params: { days } }),
 };
 
 export const adminSettingsApi = {
-  categories: () => api.get("/api/admin/settings/categories"),
-  known: () => api.get("/api/admin/settings/known"),
-  list: (category?: string) => api.get<SystemSettingItem[]>("/api/admin/settings", { params: { category } }),
+  categories: () => api.get("/admin/settings/categories"),
+  known: () => api.get("/admin/settings/known"),
+  list: (category?: string) => api.get<SystemSettingItem[]>("/admin/settings", { params: { category } }),
   create: (data: { key: string; value: string; category?: string; is_secret?: boolean; description?: string }) =>
-    api.post<SystemSettingItem>("/api/admin/settings", data),
-  update: (key: string, value: string) => api.put<SystemSettingItem>(`/api/admin/settings/${key}`, { value }),
-  delete: (key: string) => api.delete(`/api/admin/settings/${key}`),
-  status: () => api.get("/api/admin/settings/status"),
+    api.post<SystemSettingItem>("/admin/settings", data),
+  update: (key: string, value: string) => api.put<SystemSettingItem>(`/admin/settings/${key}`, { value }),
+  delete: (key: string) => api.delete(`/admin/settings/${key}`),
+  status: () => api.get("/admin/settings/status"),
 };
 
 export const adminAutomationsApi = {
-  actions: () => api.get("/api/admin/automations/actions"),
-  compile: (prompt: string) => api.post("/api/admin/automations/compile", { prompt }),
-  list: (status?: string) => api.get<AutomationWorkflow[]>("/api/admin/automations", { params: { status } }),
+  actions: () => api.get("/admin/automations/actions"),
+  compile: (prompt: string) => api.post("/admin/automations/compile", { prompt }),
+  list: (status?: string) => api.get<AutomationWorkflow[]>("/admin/automations", { params: { status } }),
   create: (data: { name: string; description?: string; natural_language_prompt: string; trigger?: string; schedule_cron?: string }) =>
-    api.post<AutomationWorkflow>("/api/admin/automations", data),
-  get: (id: number) => api.get<AutomationWorkflow>(`/api/admin/automations/${id}`),
-  update: (id: number, data: object) => api.patch<AutomationWorkflow>(`/api/admin/automations/${id}`, data),
-  activate: (id: number) => api.post(`/api/admin/automations/${id}/activate`),
-  run: (id: number, input_data?: object) => api.post(`/api/admin/automations/${id}/run`, { input_data }),
-  logs: (id: number, limit?: number) => api.get<AutomationLog[]>(`/api/admin/automations/${id}/logs`, { params: { limit } }),
-  delete: (id: number) => api.delete(`/api/admin/automations/${id}`),
+    api.post<AutomationWorkflow>("/admin/automations", data),
+  get: (id: number) => api.get<AutomationWorkflow>(`/admin/automations/${id}`),
+  update: (id: number, data: object) => api.patch<AutomationWorkflow>(`/admin/automations/${id}`, data),
+  activate: (id: number) => api.post(`/admin/automations/${id}/activate`),
+  run: (id: number, input_data?: object) => api.post(`/admin/automations/${id}/run`, { input_data }),
+  logs: (id: number, limit?: number) => api.get<AutomationLog[]>(`/admin/automations/${id}/logs`, { params: { limit } }),
+  delete: (id: number) => api.delete(`/admin/automations/${id}`),
 };
 
 export const adminAccountsApi = {
-  summary: () => api.get<AccountsSummary>("/api/admin/accounts/summary"),
-  recordTransaction: (data: object) => api.post("/api/admin/accounts/transactions", data),
-  transactions: (params?: object) => api.get("/api/admin/accounts/transactions", { params }),
-  monthlyTrend: (months?: number) => api.get("/api/admin/accounts/monthly-trend", { params: { months } }),
+  summary: () => api.get<AccountsSummary>("/admin/accounts/summary"),
+  recordTransaction: (data: object) => api.post("/admin/accounts/transactions", data),
+  transactions: (params?: object) => api.get("/admin/accounts/transactions", { params }),
+  monthlyTrend: (months?: number) => api.get("/admin/accounts/monthly-trend", { params: { months } }),
 };

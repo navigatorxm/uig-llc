@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import get_db
 from app.models.lead import Lead, PipelineStage
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadStageUpdate, LeadResponse, LeadScoreResponse
@@ -61,7 +61,7 @@ def update_lead(lead_id: int, updates: LeadUpdate, db: Session = Depends(get_db)
     for field, value in updates.model_dump(exclude_unset=True).items():
         setattr(lead, field, value)
 
-    lead.updated_at = datetime.utcnow()
+    lead.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(lead)
     return lead
@@ -76,7 +76,7 @@ def update_stage(lead_id: int, stage_update: LeadStageUpdate, db: Session = Depe
 
     old_stage = lead.pipeline_stage
     lead.pipeline_stage = stage_update.stage
-    lead.updated_at = datetime.utcnow()
+    lead.updated_at = datetime.now(timezone.utc)
     db.commit()
 
     # Side effects based on stage transition

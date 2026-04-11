@@ -1,6 +1,6 @@
 """Automation models — AI-driven workflow engine."""
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Enum, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -49,8 +49,8 @@ class AutomationWorkflow(Base):
     failure_count = Column(Integer, default=0)
 
     created_by = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
     logs = relationship("AutomationLog", back_populates="workflow", cascade="all, delete-orphan")
@@ -67,7 +67,7 @@ class AutomationLog(Base):
     error_message = Column(Text, nullable=True)
     cost_usd = Column(Float, default=0.0)
     duration_seconds = Column(Float, nullable=True)
-    started_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime, nullable=True)
 
     workflow = relationship("AutomationWorkflow", back_populates="logs")

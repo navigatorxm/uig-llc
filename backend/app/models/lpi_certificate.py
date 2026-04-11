@@ -1,5 +1,5 @@
 """SQLAlchemy model for issued LPI certificates."""
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -28,7 +28,7 @@ class LPICertificateRecord(Base):
 
     # Certificate status
     status = Column(String(20), default="valid")      # valid | expired | suspended
-    issued_at = Column(DateTime, default=datetime.utcnow)
+    issued_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     valid_until = Column(DateTime)
     flags = Column(JSON, default=list)                 # ["AIRPORT_ZONE_PROPERTY", ...]
 
@@ -52,4 +52,4 @@ class LPICertificateRecord(Base):
     lead = relationship("Lead")
     issued_by_agent = relationship("Agent")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

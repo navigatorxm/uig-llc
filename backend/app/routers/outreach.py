@@ -7,7 +7,7 @@ from app.schemas.outreach import OutreachSendRequest, OutreachSendResponse
 from app.services.outreach.whatsapp import WhatsAppService
 from app.services.outreach.email import EmailService
 from app.services.outreach.templates import render_template
-from datetime import datetime
+from datetime import datetime, timezone
 from app.auth.jwt import get_current_user
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -58,9 +58,9 @@ def send_outreach(request: OutreachSendRequest, db: Session = Depends(get_db)):
 
     # Update lead tracking fields
     if not lead.first_contact_at:
-        lead.first_contact_at = datetime.utcnow()
+        lead.first_contact_at = datetime.now(timezone.utc)
         lead.pipeline_stage = PipelineStage.contact_initiated
-    lead.last_contact_at = datetime.utcnow()
+    lead.last_contact_at = datetime.now(timezone.utc)
     lead.contact_attempt_count += 1
 
     db.commit()

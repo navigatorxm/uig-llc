@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import get_db
 from app.models.deal import Deal, DealStatus
 from app.models.lead import Lead, PipelineStage
@@ -52,7 +52,7 @@ def update_deal(deal_id: int, updates: DealUpdate, db: Session = Depends(get_db)
     for field, value in updates.model_dump(exclude_unset=True).items():
         setattr(deal, field, value)
 
-    deal.updated_at = datetime.utcnow()
+    deal.updated_at = datetime.now(timezone.utc)
 
     # Sync lead stage based on deal status
     if updates.status == DealStatus.approved:

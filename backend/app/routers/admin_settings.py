@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import get_db
 from app.models.system_setting import SystemSetting
 from app.models.admin_user import AdminUser
@@ -120,7 +120,7 @@ def create_setting(
     if existing:
         existing.value = setting_in.value
         existing.updated_by = admin.email
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = datetime.now(timezone.utc)
         db.commit()
         db.refresh(existing)
         resp = SettingResponse.model_validate(existing)
@@ -158,7 +158,7 @@ def update_setting(
         raise HTTPException(status_code=404, detail="Setting not found")
     setting.value = update.value
     setting.updated_by = admin.email
-    setting.updated_at = datetime.utcnow()
+    setting.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(setting)
     resp = SettingResponse.model_validate(setting)

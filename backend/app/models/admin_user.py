@@ -1,6 +1,6 @@
 """AdminUser model — multi-user RBAC for dashboard access."""
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, Enum, Text
 from app.database import Base
 
@@ -25,8 +25,8 @@ class AdminUser(Base):
     # Tracking
     last_login_at = Column(DateTime, nullable=True)
     login_count = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     created_by = Column(String(255), nullable=True)  # email of who added them
 
     # Permissions (JSON — fine-grained overrides)

@@ -6,7 +6,7 @@ Three-chain communication pipeline:
   Chain 3 — Verification outcome (triggered when all docs received)
 """
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.workers.celery_app import celery_app
 from app.database import SessionLocal
 from app.models.lead import Lead, PipelineStage
@@ -74,8 +74,8 @@ def send_initial_outreach(lead_id: int):
 
         # Advance stage
         lead.pipeline_stage = PipelineStage.contact_initiated
-        lead.first_contact_at = datetime.utcnow()
-        lead.last_contact_at = datetime.utcnow()
+        lead.first_contact_at = datetime.now(timezone.utc)
+        lead.last_contact_at = datetime.now(timezone.utc)
         lead.contact_attempt_count += 1
 
         db.commit()
@@ -99,7 +99,7 @@ def process_follow_ups():
     """
     db = SessionLocal()
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # ── CHAIN 1: Initial outreach follow-ups ──
         # Follow-up #1 at T+8h
@@ -296,7 +296,7 @@ def send_follow_up(lead_id: int, follow_up_number: int):
                 message_body=msg,
             ))
 
-        lead.last_contact_at = datetime.utcnow()
+        lead.last_contact_at = datetime.now(timezone.utc)
         lead.contact_attempt_count += 1
         db.commit()
         logger.info(f"Chain 1 FU#{follow_up_number} sent to lead {lead_id}")
@@ -352,7 +352,7 @@ def send_doc_follow_up(lead_id: int, follow_up_number: int):
                 message_body=msg,
             ))
 
-        lead.last_contact_at = datetime.utcnow()
+        lead.last_contact_at = datetime.now(timezone.utc)
         lead.contact_attempt_count += 1
         db.commit()
         logger.info(f"Chain 2 Doc-FU#{follow_up_number} sent to lead {lead_id}")
@@ -418,7 +418,7 @@ def send_document_request(lead_id: int, transaction_type: str = "buy"):
             ))
 
         lead.pipeline_stage = PipelineStage.docs_requested
-        lead.last_contact_at = datetime.utcnow()
+        lead.last_contact_at = datetime.now(timezone.utc)
         lead.contact_attempt_count = 0  # Reset for doc chain tracking
         db.commit()
 

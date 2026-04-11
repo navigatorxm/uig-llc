@@ -40,7 +40,7 @@ def build_agent_outreach_context(
         "airport_iata": primary_airport.iata_code if primary_airport else "",
         "avg_deal_cr": f"{config.typical_deal_size_cr:.1f}",
         "monthly_earning_est": f"₹{int(config.typical_deal_size_cr * 0.0025 * 3 * 10_000_000 / 100_000 * 3):,}",
-        "license_expiry": (datetime.utcnow().replace(year=datetime.utcnow().year + 1)).strftime("%d %b %Y"),
+        "license_expiry": (datetime.now(timezone.utc).replace(year=datetime.now(timezone.utc).year + 1)).strftime("%d %b %Y"),
         "agent_id": f"UIG-{agent.city[:3].upper()}-{abs(hash(agent.email)) % 9999:04d}",
     }
 

@@ -30,7 +30,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 from app.services.geofencing import haversine_distance
 from app.data.airports import AIRPORT_INDEX
@@ -179,7 +179,7 @@ def generate_parcel(
         in_airport_zone=in_zone,
         nearest_airport_iata=nearest.airport.iata_code if nearest else None,
         airport_distance_km=nearest.distance_km if nearest else None,
-        certificate_valid_until=datetime.utcnow() + timedelta(days=365),
+        certificate_valid_until=datetime.now(timezone.utc) + timedelta(days=365),
         seismic_zone=seismic_zone,
     )
 
@@ -224,7 +224,7 @@ def issue_certificate(
     if any(p.encroachment_detected for p in parcels):
         flags.append("ENCROACHMENT_DETECTED")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     cert_id = f"UIG-LPI-{now.strftime('%Y%m%d')}-{hashlib.md5(property_address.encode()).hexdigest()[:8].upper()}"
 
     return LPICertificate(

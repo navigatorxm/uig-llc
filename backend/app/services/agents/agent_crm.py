@@ -23,7 +23,7 @@ Revenue from Agent Network:
 import logging
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 
 logger = logging.getLogger(__name__)
@@ -87,7 +87,7 @@ class AgentProfile:
     def is_lpi_licensed(self) -> bool:
         if not self.lpi_license_active:
             return False
-        if self.lpi_license_expiry and datetime.utcnow() > self.lpi_license_expiry:
+        if self.lpi_license_expiry and datetime.now(timezone.utc) > self.lpi_license_expiry:
             return False
         return True
 

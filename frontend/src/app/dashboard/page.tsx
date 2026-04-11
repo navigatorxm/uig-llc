@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { analyticsApi, OverviewStats } from "@/lib/api";
 import MetricsDashboard from "@/components/MetricsDashboard";
 import KanbanPipeline from "@/components/KanbanPipeline";
+import AuthGuard from "@/components/AuthGuard";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<OverviewStats | null>(null);
@@ -12,10 +13,11 @@ export default function DashboardPage() {
     analyticsApi.overview().then((r) => {
       setStats(r.data);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   return (
+    <AuthGuard>
     <main className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
@@ -52,5 +54,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </main>
+    </AuthGuard>
   );
 }

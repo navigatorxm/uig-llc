@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 from typing import Optional
 from datetime import datetime
 from app.models.property import PropertyType, TransactionType, SourcePortal

@@ -3,6 +3,8 @@ from app.models.property import Property, PropertyType, TransactionType, SourceP
 from app.models.document import Document, DocumentType
 from app.models.deal import Deal, DealStatus, DealType
 from app.models.outreach_log import OutreachLog, OutreachChannel
+from app.models.agent import Agent, AgentTier, AgentStatus
+from app.models.lpi_certificate import LPICertificateRecord
 
 __all__ = [
     "Lead", "PipelineStage",
@@ -10,4 +12,6 @@ __all__ = [
     "Document", "DocumentType",
     "Deal", "DealStatus", "DealType",
     "OutreachLog", "OutreachChannel",
+    "Agent", "AgentTier", "AgentStatus",
+    "LPICertificateRecord",
 ]

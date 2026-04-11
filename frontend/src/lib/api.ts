@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -55,7 +55,9 @@ export type PipelineStage =
   | "approved"
   | "visit_scheduled"
   | "closed_won"
-  | "closed_lost";
+  | "closed_lost"
+  | "cold_lead"
+  | "pending_docs";
 
 export interface Lead {
   id: number;

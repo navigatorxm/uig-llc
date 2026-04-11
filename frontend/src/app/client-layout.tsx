@@ -36,6 +36,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    initAuth();
     setMounted(true);
   }, []);
 

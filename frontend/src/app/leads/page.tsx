@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { leadsApi, Lead, PipelineStage } from "@/lib/api";
+import AuthGuard from "@/components/AuthGuard";
 
 const STAGE_OPTIONS: PipelineStage[] = [
   "new_lead", "contact_initiated", "response_received", "qualified",
   "docs_requested", "docs_received", "under_verification",
   "approved", "visit_scheduled", "closed_won", "closed_lost",
+  "cold_lead", "pending_docs",
 ];
 
 export default function LeadsPage() {
@@ -22,6 +24,7 @@ export default function LeadsPage() {
   }, [stage]);
 
   return (
+    <AuthGuard>
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
@@ -95,5 +98,6 @@ export default function LeadsPage() {
         </div>
       )}
     </div>
+    </AuthGuard>
   );
 }

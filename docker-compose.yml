@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-uig_pipeline}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-uig} -d ${POSTGRES_DB:-uig_pipeline}"]
       interval: 10s
@@ -88,6 +89,32 @@ services:
       - frontend
     restart: unless-stopped
 
+  n8n:
+    image: n8nio/n8n:latest
+    environment:
+      - N8N_HOST=lpi.directory
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://lpi.directory/n8n/
+      - N8N_PATH=/n8n/
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_ADMIN_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_ADMIN_PASSWORD:-UIG@n8n2026}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-uig}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - GENERIC_TIMEZONE=Asia/Kolkata
+      - N8N_DIAGNOSTICS_ENABLED=false
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   certbot:
     image: certbot/certbot:latest
     volumes:
@@ -102,3 +129,4 @@ volumes:
   redis_data:
   letsencrypt:
   certbot_webroot:
+  n8n_data:

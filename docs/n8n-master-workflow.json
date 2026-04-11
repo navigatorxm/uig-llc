@@ -1,0 +1,320 @@
+{
+  "name": "UIG Pipeline — Master Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "uig-pipeline-event",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Pipeline Event Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300]
+    },
+
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            { "outputKey": "new_lead",           "conditions": { "conditions": [{ "leftValue": "={{ $json.event }}", "rightValue": "new_lead",           "operator": { "type": "string", "operation": "equals" }}]}},
+            { "outputKey": "response_received",  "conditions": { "conditions": [{ "leftValue": "={{ $json.event }}", "rightValue": "response_received",  "operator": { "type": "string", "operation": "equals" }}]}},
+            { "outputKey": "docs_uploaded",      "conditions": { "conditions": [{ "leftValue": "={{ $json.event }}", "rightValue": "docs_uploaded",      "operator": { "type": "string", "operation": "equals" }}]}},
+            { "outputKey": "docs_verified",      "conditions": { "conditions": [{ "leftValue": "={{ $json.event }}", "rightValue": "docs_verified",      "operator": { "type": "string", "operation": "equals" }}]}},
+            { "outputKey": "lead_approved",      "conditions": { "conditions": [{ "leftValue": "={{ $json.event }}", "rightValue": "lead_approved",      "operator": { "type": "string", "operation": "equals" }}]}},
+            { "outputKey": "lead_rejected",      "conditions": { "conditions": [{ "leftValue": "={{ $json.event }}", "rightValue": "lead_rejected",      "operator": { "type": "string", "operation": "equals" }}]}}
+          ]
+        }
+      },
+      "id": "switch-event",
+      "name": "Route by Event Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [300, 300]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://backend:8000/api/webhooks/make",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "K2wmLqs5uX6TVsF7KTLieLIOMYTeda9WEEpwUrLhb_Y" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "action", "value": "send_initial_outreach" },
+            { "name": "lead_id", "value": "={{ $json.lead_id }}" }
+          ]
+        }
+      },
+      "id": "new-lead-outreach",
+      "name": "Dispatch Initial Outreach",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 0],
+      "notes": "Triggers Celery task: send_initial_outreach → WhatsApp + Email + all 5 follow-ups scheduled automatically"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://backend:8000/api/webhooks/make",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "K2wmLqs5uX6TVsF7KTLieLIOMYTeda9WEEpwUrLhb_Y" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "action", "value": "send_document_request" },
+            { "name": "lead_id", "value": "={{ $json.lead_id }}" },
+            { "name": "transaction_type", "value": "={{ $json.transaction_type || 'buy' }}" }
+          ]
+        }
+      },
+      "id": "response-doc-request",
+      "name": "Send Document Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 200],
+      "notes": "Lead responded → trigger Chain 2 document collection via Celery"
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://backend:8000/api/documents/{{ $json.lead_id }}/legal-check",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "K2wmLqs5uX6TVsF7KTLieLIOMYTeda9WEEpwUrLhb_Y" }
+          ]
+        }
+      },
+      "id": "docs-ai-verify",
+      "name": "Trigger AI Doc Verification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 400]
+    },
+
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://backend:8000/api/leads/{{ $json.lead_id }}/stage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "K2wmLqs5uX6TVsF7KTLieLIOMYTeda9WEEpwUrLhb_Y" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "stage", "value": "under_verification" }
+          ]
+        }
+      },
+      "id": "docs-advance-stage",
+      "name": "Stage → Under Verification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 400]
+    },
+
+    {
+      "parameters": {
+        "sendTo": "philip.am@uigllc.org",
+        "subject": "=[UIG] Docs received — Lead #{{ $json.lead_id }} ({{ $json.owner_name }})",
+        "emailType": "text",
+        "message": "=Documents uploaded for Lead #{{ $json.lead_id }} ({{ $json.owner_name }}).\n\nAI verification has been triggered.\n\nView in dashboard: https://lpi.directory/dashboard/leads/{{ $json.lead_id }}"
+      },
+      "id": "docs-notify-philip",
+      "name": "Notify Philip: Docs Received",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1200, 400]
+    },
+
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://backend:8000/api/leads/{{ $json.lead_id }}/stage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "K2wmLqs5uX6TVsF7KTLieLIOMYTeda9WEEpwUrLhb_Y" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "stage", "value": "approved" }
+          ]
+        }
+      },
+      "id": "verified-approve",
+      "name": "Stage → Approved",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 600]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://backend:8000/api/deals",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "K2wmLqs5uX6TVsF7KTLieLIOMYTeda9WEEpwUrLhb_Y" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "lead_id", "value": "={{ $json.lead_id }}" },
+            { "name": "property_id", "value": "={{ $json.property_id }}" },
+            { "name": "deal_type", "value": "={{ $json.transaction_type || 'buy' }}" },
+            { "name": "agreed_price", "value": "={{ $json.price }}" }
+          ]
+        }
+      },
+      "id": "verified-create-deal",
+      "name": "Create Deal Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 600]
+    },
+
+    {
+      "parameters": {
+        "sendTo": "philip.am@uigllc.org",
+        "subject": "=✅ [UIG APPROVED] Lead #{{ $json.lead_id }} — {{ $json.owner_name }} — Ready for Site Visit",
+        "emailType": "text",
+        "message": "=Lead APPROVED — Action Required\n\nOwner: {{ $json.owner_name }}\nProperty: {{ $json.property_address }}\nAsking Price: ₹{{ $json.price }}\n\nAll documents verified. Please schedule a site visit within 7 days.\n\nDashboard: https://lpi.directory/dashboard/leads/{{ $json.lead_id }}"
+      },
+      "id": "verified-notify-philip",
+      "name": "Notify Philip: Lead Approved",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1200, 600]
+    },
+
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://backend:8000/api/leads/{{ $json.lead_id }}/stage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "K2wmLqs5uX6TVsF7KTLieLIOMYTeda9WEEpwUrLhb_Y" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "stage", "value": "visit_scheduled" }
+          ]
+        }
+      },
+      "id": "approved-schedule-visit",
+      "name": "Stage → Visit Scheduled",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 800]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://backend:8000/api/webhooks/make",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-API-Key", "value": "K2wmLqs5uX6TVsF7KTLieLIOMYTeda9WEEpwUrLhb_Y" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "action", "value": "send_initial_outreach" },
+            { "name": "lead_id", "value": "={{ $json.lead_id }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "rejected-decline",
+      "name": "Send Polite Decline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 1000],
+      "notes": "Sends polite decline message via the outreach system"
+    }
+  ],
+  "connections": {
+    "Pipeline Event Webhook": {
+      "main": [
+        [{ "node": "Route by Event Type", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route by Event Type": {
+      "main": [
+        [{ "node": "Dispatch Initial Outreach", "type": "main", "index": 0 }],
+        [{ "node": "Send Document Request", "type": "main", "index": 0 }],
+        [{ "node": "Trigger AI Doc Verification", "type": "main", "index": 0 }],
+        [{ "node": "Stage → Approved", "type": "main", "index": 0 }],
+        [{ "node": "Stage → Visit Scheduled", "type": "main", "index": 0 }],
+        [{ "node": "Send Polite Decline", "type": "main", "index": 0 }]
+      ]
+    },
+    "Trigger AI Doc Verification": {
+      "main": [
+        [{ "node": "Stage → Under Verification", "type": "main", "index": 0 }]
+      ]
+    },
+    "Stage → Under Verification": {
+      "main": [
+        [{ "node": "Notify Philip: Docs Received", "type": "main", "index": 0 }]
+      ]
+    },
+    "Stage → Approved": {
+      "main": [
+        [{ "node": "Create Deal Record", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Deal Record": {
+      "main": [
+        [{ "node": "Notify Philip: Lead Approved", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "UIG Pipeline" },
+    { "name": "Production" }
+  ]
+}

@@ -37,9 +37,9 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(hour=8, minute=30),
         "args": ("magicbricks", "Delhi NCR", "rent", None, 10),
     },
-    # Follow-up check every 6 hours
+    # Follow-up check every 2 hours (catches 8h/16h/24h/36h/48h windows accurately)
     "check-follow-ups": {
         "task": "app.workers.outreach_tasks.process_follow_ups",
-        "schedule": crontab(hour="*/6"),
+        "schedule": crontab(hour="*/2"),
     },
 }

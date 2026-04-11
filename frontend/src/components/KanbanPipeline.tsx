@@ -3,17 +3,19 @@ import { useEffect, useState } from "react";
 import { leadsApi, Lead, PipelineStage } from "@/lib/api";
 
 const STAGES: Array<{ key: PipelineStage; label: string; color: string }> = [
-  { key: "new_lead",           label: "New Lead",           color: "bg-gray-100 border-gray-300" },
-  { key: "contact_initiated",  label: "Contact Initiated",  color: "bg-blue-50 border-blue-200" },
-  { key: "response_received",  label: "Response Received",  color: "bg-cyan-50 border-cyan-200" },
-  { key: "qualified",          label: "Qualified",          color: "bg-yellow-50 border-yellow-200" },
-  { key: "docs_requested",     label: "Docs Requested",     color: "bg-orange-50 border-orange-200" },
-  { key: "docs_received",      label: "Docs Received",      color: "bg-amber-50 border-amber-200" },
+  { key: "new_lead", label: "New Lead", color: "bg-gray-100 border-gray-300" },
+  { key: "contact_initiated", label: "Contact Initiated", color: "bg-blue-50 border-blue-200" },
+  { key: "response_received", label: "Response Received", color: "bg-cyan-50 border-cyan-200" },
+  { key: "qualified", label: "Qualified", color: "bg-yellow-50 border-yellow-200" },
+  { key: "docs_requested", label: "Docs Requested", color: "bg-orange-50 border-orange-200" },
+  { key: "docs_received", label: "Docs Received", color: "bg-amber-50 border-amber-200" },
   { key: "under_verification", label: "Under Verification", color: "bg-purple-50 border-purple-200" },
-  { key: "approved",           label: "Approved",           color: "bg-green-50 border-green-200" },
-  { key: "visit_scheduled",    label: "Visit Scheduled",    color: "bg-teal-50 border-teal-200" },
-  { key: "closed_won",         label: "Closed Won",         color: "bg-emerald-50 border-emerald-300" },
-  { key: "closed_lost",        label: "Closed Lost",        color: "bg-red-50 border-red-200" },
+  { key: "approved", label: "Approved", color: "bg-green-50 border-green-200" },
+  { key: "visit_scheduled", label: "Visit Scheduled", color: "bg-teal-50 border-teal-200" },
+  { key: "closed_won", label: "Closed Won", color: "bg-emerald-50 border-emerald-300" },
+  { key: "closed_lost", label: "Closed Lost", color: "bg-red-50 border-red-200" },
+  { key: "cold_lead", label: "Cold Lead", color: "bg-slate-100 border-slate-300" },
+  { key: "pending_docs", label: "Pending Docs", color: "bg-stone-100 border-stone-300" },
 ];
 
 function LeadCard({ lead, onStageChange }: { lead: Lead; onStageChange: () => void }) {
@@ -21,8 +23,8 @@ function LeadCard({ lead, onStageChange }: { lead: Lead; onStageChange: () => vo
     lead.lead_score >= 70
       ? "text-green-600 bg-green-50"
       : lead.lead_score >= 40
-      ? "text-yellow-600 bg-yellow-50"
-      : "text-gray-500 bg-gray-100";
+        ? "text-yellow-600 bg-yellow-50"
+        : "text-gray-500 bg-gray-100";
 
   return (
     <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 text-sm space-y-1.5">

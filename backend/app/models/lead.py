@@ -6,6 +6,7 @@ from app.database import Base
 
 
 class PipelineStage(str, enum.Enum):
+    # Active outreach stages
     new_lead = "new_lead"
     contact_initiated = "contact_initiated"
     response_received = "response_received"
@@ -17,6 +18,9 @@ class PipelineStage(str, enum.Enum):
     visit_scheduled = "visit_scheduled"
     closed_won = "closed_won"
     closed_lost = "closed_lost"
+    # Holding stages — for re-engagement campaigns
+    cold_lead = "cold_lead"          # No response after 48h (5 follow-ups exhausted)
+    pending_docs = "pending_docs"    # Responded but docs incomplete after 14 days
 
 
 class Lead(Base):

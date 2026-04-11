@@ -161,28 +161,54 @@ def _score_lead(lead: Lead, db: Session) -> LeadScoreResponse:
 def _handle_stage_transition(lead: Lead, _old_stage: PipelineStage, new_stage: PipelineStage, db: Session):
     """Trigger automation when a lead moves to a new pipeline stage."""
     from app.workers.outreach_tasks import send_document_request
-    from app.workers.outreach_tasks import send_initial_outreach
 
     if new_stage == PipelineStage.qualified:
-        # Auto-request documents on qualification
+        # Chain 2 T+0: Auto-request documents on qualification
         prop = lead.properties[0] if lead.properties else None
         tx_type = prop.transaction_type.value if prop else "buy"
         send_document_request.delay(lead.id, tx_type)
 
     elif new_stage == PipelineStage.approved:
-        # Notify team + create HubSpot deal
+        # Chain 3 T+0: Notify team + create HubSpot deal
         from app.services.crm.hubspot import HubSpotService
+        from app.services.outreach.whatsapp import WhatsAppService
+        from app.services.outreach.templates import render_template
+        from app.services.outreach.email import EmailService
+
         hs = HubSpotService()
         prop = lead.properties[0] if lead.properties else None
         deal_type = prop.transaction_type.value if prop else "buy"
         deal_id = hs.create_deal(lead, prop, deal_type)
         if deal_id:
-            # Update the deal record if one exists
             from app.models.deal import Deal
             deal = db.query(Deal).filter(Deal.lead_id == lead.id).first()
             if deal:
                 deal.hubspot_deal_id = deal_id
                 db.commit()
+
+        # Send approval notification to lead
+        if lead.whatsapp:
+            context = {
+                "owner_name": lead.owner_name,
+                "property_address": prop.locality if prop else "your property",
+                "transaction_type": deal_type,
+            }
+            try:
+                msg = render_template("approval_notification_whatsapp", context)
+                WhatsAppService().send(lead.whatsapp, msg)
+            except Exception:
+                pass
+        if lead.email:
+            context = {
+                "owner_name": lead.owner_name,
+                "property_address": prop.locality if prop else "your property",
+                "transaction_type": deal_type,
+            }
+            try:
+                subject, body = render_template("approval_email", context, email=True)
+                EmailService().send(lead.email, lead.owner_name, subject, body)
+            except Exception:
+                pass
 
     elif new_stage == PipelineStage.closed_lost:
         # Send polite decline via WhatsApp
@@ -194,9 +220,31 @@ def _handle_stage_transition(lead: Lead, _old_stage: PipelineStage, new_stage: P
                 "owner_name": lead.owner_name,
                 "property_address": prop.locality if prop else "your property",
                 "transaction_type": prop.transaction_type.value if prop else "buy",
+                "rejection_reason": "internal acquisition criteria",
             }
-            msg = render_template("rejection_notification_whatsapp", context)
             try:
+                msg = render_template("rejection_notification_whatsapp", context)
                 WhatsAppService().send(lead.whatsapp, msg)
             except Exception:
                 pass
+
+    elif new_stage == PipelineStage.cold_lead:
+        # Log that the lead has been moved to cold status after 72h
+        from app.models.outreach_log import OutreachLog, OutreachChannel
+        db.add(OutreachLog(
+            lead_id=lead.id,
+            channel=OutreachChannel.email,
+            message_template="cold_lead_auto_classification",
+            message_body="Lead automatically classified as cold after 72h with no response across 5 follow-ups.",
+        ))
+        db.commit()
+
+    elif new_stage == PipelineStage.pending_docs:
+        # Notify team about stalled doc collection
+        from app.services.outreach.email import EmailService
+        es = EmailService()
+        es.send_internal(
+            subject=f"Pending Docs Alert — {lead.owner_name} (Lead #{lead.id})",
+            body=f"Lead {lead.id} ({lead.owner_name}) has not completed document submission after 14 days. "
+                 f"Consider manual follow-up or re-allocation.",
+        )

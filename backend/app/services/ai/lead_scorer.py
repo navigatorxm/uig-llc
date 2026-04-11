@@ -1,17 +1,20 @@
-"""Claude-powered lead scoring for UIG property acquisition."""
+"""AI-powered lead scoring for UIG property acquisition.
+
+Uses the unified AI client (Vertex AI / Gemini primary, Anthropic fallback).
+"""
 import json
 import logging
-from datetime import datetime, timedelta
+import asyncio
 from typing import Optional
-import anthropic
-from app.config import settings
+from app.services.ai.client import ai_client
 
 logger = logging.getLogger(__name__)
 
-SCORING_PROMPT = """You are a property acquisition analyst for United Investing Group LLC (UIG),
+SCORING_SYSTEM = """You are a property acquisition analyst for United Investing Group LLC (UIG),
 a global conglomerate acquiring real estate in Delhi NCR, India.
+You produce structured lead quality scores from 0-100."""
 
-Analyze the following lead data and produce a lead quality score from 0-100.
+SCORING_PROMPT = """Analyze the following lead data and produce a lead quality score from 0-100.
 
 Lead Data:
 {lead_data}
@@ -67,35 +70,34 @@ Respond ONLY with valid JSON in this exact format:
 
 class LeadScorer:
     def __init__(self):
-        self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        self._client = ai_client
+
+    async def score_async(self, lead_data: dict) -> dict:
+        """Score a lead using the unified AI client (async)."""
+        prompt = SCORING_PROMPT.format(lead_data=json.dumps(lead_data, indent=2, default=str))
+        try:
+            result = await self._client.generate_json(
+                prompt,
+                system=SCORING_SYSTEM,
+                max_tokens=512,
+            )
+            logger.info(f"Lead scored: {result.get('score')} ({result.get('priority')}) via {self._client.primary_provider}")
+            return result
+        except Exception as exc:
+            logger.error(f"Lead scoring AI error: {exc}")
+            return self._fallback_score(lead_data)
 
     def score(self, lead_data: dict) -> dict:
-        """
-        Score a lead using Claude.
-        lead_data dict should contain all available lead/property info.
-        Returns score dict with score, breakdown, priority, reasoning.
-        """
-        prompt = SCORING_PROMPT.format(lead_data=json.dumps(lead_data, indent=2, default=str))
-
+        """Sync wrapper for scoring (for non-async callers)."""
         try:
-            message = self._client.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=512,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            result_text = message.content[0].text.strip()
-
-            # Parse JSON response
-            result = json.loads(result_text)
-            logger.info(f"Lead scored: {result.get('score')} ({result.get('priority')})")
-            return result
-
-        except json.JSONDecodeError as exc:
-            logger.error(f"Failed to parse lead score JSON: {exc}")
-            return self._fallback_score(lead_data)
-        except Exception as exc:
-            logger.error(f"Lead scoring API error: {exc}")
-            return self._fallback_score(lead_data)
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    return pool.submit(asyncio.run, self.score_async(lead_data)).result()
+            return loop.run_until_complete(self.score_async(lead_data))
+        except RuntimeError:
+            return asyncio.run(self.score_async(lead_data))
 
     def _fallback_score(self, lead_data: dict) -> dict:
         """Rule-based fallback scoring when AI is unavailable."""

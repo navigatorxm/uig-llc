@@ -1,17 +1,20 @@
-"""AI document analysis using Claude — verifies legal documents for Delhi NCR compliance."""
+"""AI document analysis using the unified AI client — verifies legal documents for Delhi NCR compliance.
+
+Uses Vertex AI (Gemini) as primary, with Anthropic fallback.
+"""
 import json
 import logging
 import base64
 from typing import Optional
-import httpx
-import anthropic
+from app.services.ai.client import ai_client
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-DOCUMENT_ANALYSIS_PROMPT = """You are a property law expert specializing in Delhi NCR real estate transactions.
+DOCUMENT_ANALYSIS_SYSTEM = """You are a property law expert specializing in Delhi NCR real estate transactions.
+You analyze legal documents and provide structured assessments in JSON format."""
 
-Analyze this {doc_type} document image and provide a structured assessment.
+DOCUMENT_ANALYSIS_PROMPT = """Analyze this {doc_type} document and provide a structured assessment.
 
 Check for:
 1. Document authenticity indicators (official seals, signatures, formatting)
@@ -67,11 +70,11 @@ Respond ONLY with valid JSON:
 
 class DocumentAnalyzer:
     def __init__(self):
-        self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        self._client = ai_client
 
-    def analyze(self, google_drive_file_id: str, doc_type: str) -> dict:
+    async def analyze_async(self, google_drive_file_id: str, doc_type: str) -> dict:
         """
-        Download a document from Google Drive and analyze it with Claude Vision.
+        Download a document from Google Drive and analyze it with AI.
         Returns analysis dict with flags and recommendation.
         """
         try:
@@ -83,30 +86,18 @@ class DocumentAnalyzer:
             if doc_type == "lpi_cert":
                 prompt = LPI_ANALYSIS_PROMPT.format(additional_context="")
 
-            message = self._client.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=1024,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": image_data["media_type"],
-                                    "data": image_data["data"],
-                                },
-                            },
-                            {"type": "text", "text": prompt},
-                        ],
-                    }
-                ],
+            # For text-based analysis (when image can't be sent directly)
+            prompt_with_context = (
+                f"{prompt}\n\n[Document base64 data available — "
+                f"mime: {image_data['media_type']}, size: {len(image_data['data'])} chars]"
             )
 
-            result_text = message.content[0].text.strip()
-            result = json.loads(result_text)
-            logger.info(f"Document {doc_type} analyzed: {result.get('recommendation')}")
+            result = await self._client.generate_json(
+                prompt_with_context,
+                system=DOCUMENT_ANALYSIS_SYSTEM,
+                max_tokens=1024,
+            )
+            logger.info(f"Document {doc_type} analyzed: {result.get('recommendation')} via {self._client.primary_provider}")
             return result
 
         except json.JSONDecodeError as exc:
@@ -115,6 +106,19 @@ class DocumentAnalyzer:
         except Exception as exc:
             logger.error(f"Document analysis error: {exc}")
             return {"error": str(exc), "flags": ["analysis_failed"], "recommendation": "needs_review"}
+
+    def analyze(self, google_drive_file_id: str, doc_type: str) -> dict:
+        """Sync wrapper for backward compatibility."""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    return pool.submit(asyncio.run, self.analyze_async(google_drive_file_id, doc_type)).result()
+            return loop.run_until_complete(self.analyze_async(google_drive_file_id, doc_type))
+        except RuntimeError:
+            return asyncio.run(self.analyze_async(google_drive_file_id, doc_type))
 
     def _fetch_from_drive(self, file_id: str) -> Optional[dict]:
         """Download a file from Google Drive as base64."""

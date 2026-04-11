@@ -20,8 +20,13 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
-    # Anthropic
+    # AI Providers
+    vertex_ai_api_key: str = ""
     anthropic_api_key: str = ""
+    openrouter_api_key: str = ""
+    groq_api_key: str = ""
+    cerebras_api_key: str = ""
+    fireworks_ai_api_key: str = ""
 
     # Twilio WhatsApp
     twilio_account_sid: str = ""

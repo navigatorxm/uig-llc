@@ -16,13 +16,25 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await api.post("/auth/login", { email, password });
+      // Try admin auth first
+      const res = await api.post("/api/admin/auth/login", { email, password });
       setAuthToken(res.data.access_token);
+      localStorage.setItem("admin_name", res.data.full_name || email.split("@")[0]);
+      localStorage.setItem("admin_role", res.data.role || "admin");
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(
-        err.response?.data?.detail || "Invalid email or password"
-      );
+    } catch {
+      // Fallback to legacy auth
+      try {
+        const res = await api.post("/auth/login", { email, password });
+        setAuthToken(res.data.access_token);
+        localStorage.setItem("admin_name", email.split("@")[0]);
+        localStorage.setItem("admin_role", "admin");
+        router.push("/dashboard");
+      } catch (err: any) {
+        setError(
+          err.response?.data?.detail || "Invalid email or password"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -43,11 +55,11 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 mb-4">
               <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 0h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-white">UIG Pipeline</h1>
-            <p className="text-sm text-gray-400 mt-1">Sign in to your dashboard</p>
+            <p className="text-sm text-gray-400 mt-1">Admin Console · Sign In</p>
           </div>
 
           {/* Error */}
@@ -71,7 +83,7 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-                placeholder="admin@uigllc.org"
+                placeholder="your@email.com"
               />
             </div>
 

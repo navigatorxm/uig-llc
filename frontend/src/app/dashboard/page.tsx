@@ -3,13 +3,15 @@ import { useEffect, useState } from "react";
 import { analyticsApi, OverviewStats } from "@/lib/api";
 import MetricsDashboard from "@/components/MetricsDashboard";
 import KanbanPipeline from "@/components/KanbanPipeline";
-import AuthGuard from "@/components/AuthGuard";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<OverviewStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("Admin");
 
   useEffect(() => {
+    const name = localStorage.getItem("admin_name") || "Admin";
+    setUserName(name);
     analyticsApi.overview().then((r) => {
       setStats(r.data);
       setLoading(false);
@@ -17,21 +19,29 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <AuthGuard>
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            UIG Property Acquisition Pipeline
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            United Investing Group LLC · Delhi NCR Operations
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm font-medium text-gray-700">Philip George</p>
-          <p className="text-xs text-gray-400">Property Acquisition Manager · Head of Asia Pacific</p>
+      <header className="bg-white border-b border-gray-200 px-8 py-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Property Acquisition Pipeline
+            </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              United Investing Group LLC · Delhi NCR Operations
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-medium text-gray-700">Welcome back, {userName}</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {new Date().toLocaleDateString("en-IN", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
         </div>
       </header>
 
@@ -53,7 +63,6 @@ export default function DashboardPage() {
           <KanbanPipeline />
         </div>
       </div>
-    </main>
-    </AuthGuard>
+    </div>
   );
 }

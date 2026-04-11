@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from app.config import settings
 from app.routers import (
     properties,
@@ -13,6 +14,31 @@ from app.routers import (
     lpi,
     auth,
 )
+from app.routers import (
+    admin_auth,
+    admin_pipeline,
+    admin_settings,
+    admin_costs,
+    admin_automations,
+    admin_accounts,
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Create tables and seed master admins on startup."""
+    from app.database import engine, Base, SessionLocal
+    import app.models  # noqa — ensure all models are registered
+    Base.metadata.create_all(bind=engine)
+    # Seed master admin accounts
+    db = SessionLocal()
+    try:
+        from app.routers.admin_auth import seed_master_admins
+        seed_master_admins(db)
+    finally:
+        db.close()
+    yield
+
 
 app = FastAPI(
     title="UIG Property Acquisition Pipeline",
@@ -25,6 +51,7 @@ app = FastAPI(
     version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -52,6 +79,14 @@ app.include_router(agents.router, prefix="/api", tags=["Agent Network"])
 
 # Authentication
 app.include_router(auth.router)
+
+# Admin dashboard
+app.include_router(admin_auth.router)
+app.include_router(admin_pipeline.router)
+app.include_router(admin_settings.router)
+app.include_router(admin_costs.router)
+app.include_router(admin_automations.router)
+app.include_router(admin_accounts.router)
 
 
 @app.get("/health", tags=["Health"])

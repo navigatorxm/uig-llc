@@ -9,8 +9,9 @@ from app.services.agents.agent_outreach import (
     generate_city_agent_campaign_brief,
     AgentOutreachService,
 )
+from app.auth.jwt import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/agents", response_model=List[dict])

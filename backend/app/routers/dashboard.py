@@ -7,8 +7,9 @@ from app.models.lead import Lead, PipelineStage
 from app.models.property import Property
 from app.models.deal import Deal, DealStatus
 from app.models.outreach_log import OutreachLog
+from app.auth.jwt import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/analytics/overview")

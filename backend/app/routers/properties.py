@@ -5,8 +5,9 @@ from app.database import get_db
 from app.models.property import Property, TransactionType, SourcePortal
 from app.schemas.property import PropertyResponse, ScrapeRequest, ScrapeResponse
 from app.workers.scraping_tasks import scrape_portal
+from app.auth.jwt import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/scraping/trigger", response_model=ScrapeResponse)

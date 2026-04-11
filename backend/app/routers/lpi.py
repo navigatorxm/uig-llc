@@ -12,8 +12,9 @@ from app.services.geofencing import (
 )
 from app.models.lpi_certificate import LPICertificateRecord
 from datetime import datetime
+from app.auth.jwt import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 class LPIIssueRequest(BaseModel):

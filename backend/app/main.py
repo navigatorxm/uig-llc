@@ -11,15 +11,14 @@ from app.routers import (
     dashboard,
     agents,
     lpi,
+    auth,
 )
 
 app = FastAPI(
     title="UIG Property Acquisition Pipeline",
     description=(
         "Automated real estate acquisition system for United Investing Group LLC. "
-        "Powered by UIG's private earth-mapping satellite division — issuing LPI "
-        "(LiDAR Property Identifier) certificates for every 10x10m land parcel near "
-        "all major Indian airports."
+        "Manages property leads, outreach campaigns, and deal pipelines."
     ),
     version="2.0.0",
     docs_url="/api/docs",
@@ -49,17 +48,14 @@ app.include_router(lpi.router, prefix="/api", tags=["LPI Certificates"])
 # Agent partner network
 app.include_router(agents.router, prefix="/api", tags=["Agent Network"])
 
+# Authentication
+app.include_router(auth.router)
+
 
 @app.get("/health", tags=["Health"])
 def health_check():
-    from app.data.airports import AIRPORTS
     return {
         "status": "ok",
         "service": "UIG Property Acquisition Pipeline",
         "version": "2.0.0",
-        "coverage": {
-            "airports_mapped": len(AIRPORTS),
-            "cities_active": len({a.city for a in AIRPORTS}),
-            "lpi_authority": "UIG Satellite Mapping Division",
-        },
     }

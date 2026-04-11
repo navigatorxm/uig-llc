@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import AnyHttpUrl
 from typing import List
 
 
@@ -8,8 +7,12 @@ class Settings(BaseSettings):
 
     # App
     environment: str = "development"
-    secret_key: str = "change-me"
+    secret_key: str  # No default — must be set in .env
     allowed_origins: str = "http://localhost:3000"
+
+    # Admin credentials (single-admin internal tool)
+    admin_email: str = "admin@uigllc.org"
+    admin_password_hash: str  # bcrypt hash — generate with: python scripts/hash_password.py
 
     # Database
     database_url: str

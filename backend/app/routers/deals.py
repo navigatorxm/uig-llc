@@ -6,8 +6,9 @@ from app.database import get_db
 from app.models.deal import Deal, DealStatus
 from app.models.lead import Lead, PipelineStage
 from app.schemas.deal import DealCreate, DealUpdate, DealResponse
+from app.auth.jwt import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/deals", response_model=List[DealResponse])

@@ -8,8 +8,9 @@ from app.models.lead import Lead, PipelineStage
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadStageUpdate, LeadResponse, LeadScoreResponse
 from app.services.ai.lead_scorer import LeadScorer
 from app.services.crm.hubspot import HubSpotService
+from app.auth.jwt import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/leads", response_model=List[LeadResponse])
@@ -157,7 +158,7 @@ def _score_lead(lead: Lead, db: Session) -> LeadScoreResponse:
     )
 
 
-def _handle_stage_transition(lead: Lead, old_stage: PipelineStage, new_stage: PipelineStage, db: Session):
+def _handle_stage_transition(lead: Lead, _old_stage: PipelineStage, new_stage: PipelineStage, db: Session):
     """Trigger automation when a lead moves to a new pipeline stage."""
     from app.workers.outreach_tasks import send_document_request
     from app.workers.outreach_tasks import send_initial_outreach

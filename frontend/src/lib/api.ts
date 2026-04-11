@@ -7,6 +7,42 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+  if (token) {
+    localStorage.setItem("auth_token", token);
+  } else {
+    localStorage.removeItem("auth_token");
+  }
+};
+
+export const initAuth = () => {
+  const token = localStorage.getItem("auth_token");
+  if (token) {
+    authToken = token;
+  }
+};
+
+api.interceptors.request.use((config) => {
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      setAuthToken(null);
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 // --- Types ---
 export type PipelineStage =
   | "new_lead"

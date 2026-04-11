@@ -12,8 +12,9 @@ from app.schemas.document import (
 from app.services.storage.google_drive import GoogleDriveService
 from app.services.verification.legal_checker import run_full_legal_check
 from app.workers.verification_tasks import analyze_document, check_docs_complete
+from app.auth.jwt import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/documents/upload", response_model=DocumentUploadResponse)

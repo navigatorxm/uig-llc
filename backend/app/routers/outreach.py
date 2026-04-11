@@ -8,8 +8,9 @@ from app.services.outreach.whatsapp import WhatsAppService
 from app.services.outreach.email import EmailService
 from app.services.outreach.templates import render_template
 from datetime import datetime
+from app.auth.jwt import get_current_user
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/outreach/send", response_model=OutreachSendResponse)

@@ -13,6 +13,7 @@ from app.routers import (
     agents,
     lpi,
     auth,
+    payments,
 )
 from app.routers import (
     admin_auth,
@@ -79,6 +80,9 @@ app.include_router(agents.router, prefix="/api", tags=["Agent Network"])
 
 # Authentication
 app.include_router(auth.router)
+
+# Payment gateway
+app.include_router(payments.router, prefix="/api", tags=["Payments"])
 
 # Admin dashboard
 app.include_router(admin_auth.router)

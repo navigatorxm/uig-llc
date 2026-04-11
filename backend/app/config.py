@@ -49,6 +49,12 @@ class Settings(BaseSettings):
     # Apify
     apify_api_token: str = ""
 
+    # CashFree Payment Gateway
+    cashfree_app_id: str = ""
+    cashfree_secret_key: str = ""
+    cashfree_environment: str = "sandbox"  # "sandbox" | "production"
+    cashfree_webhook_url: str = "https://lpi.directory/api/webhooks/cashfree"
+
     # Sender identity
     sender_name: str = "Philip George"
     sender_title: str = "Property Acquisition Manager, Head of Asia Pacific"

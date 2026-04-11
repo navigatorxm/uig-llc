@@ -45,6 +45,8 @@ KNOWN_SETTINGS = {
     "linkedin_access_token": {"category": "social", "is_secret": True, "description": "LinkedIn API access token"},
     "stripe_secret_key": {"category": "payments", "is_secret": True, "description": "Stripe secret key"},
     "razorpay_key_id": {"category": "payments", "is_secret": True, "description": "Razorpay key ID"},
+    "cashfree_app_id": {"category": "payments", "is_secret": False, "description": "CashFree App ID"},
+    "cashfree_secret_key": {"category": "payments", "is_secret": True, "description": "CashFree Secret Key"},
 }
 
 
